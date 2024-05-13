@@ -9,11 +9,7 @@ After=network.target
 Restart=always
 RestartSec=1
 User=1000
-ExecStart=gunicorn \
-  --chdir /opt/maas/vboxpower \
-  -b 0.0.0.0:5241 \
-  --access-logfile - --error-logfile - \
-  -w 2 vboxpower:app
+ExecStart=/opt/maas/vboxpower/start_gunicorn.sh
 
 [Install]
 WantedBy=multi-user.target

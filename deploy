@@ -37,7 +37,21 @@ else
     echo "INFO: VirtualBox SDK is installed on the system."
 fi
 
-pip3 install -r requirements.txt &> /dev/null
+
+# Prepare the directory
+mkdir -p /opt/maas/vboxpower
+
+# Define the path and name for your virtual environment
+venv_path="/opt/maas/vboxpower/venv"
+
+# Create the virtual environment
+python3 -m venv "$venv_path"
+
+# Activate the virtual environment
+source "$venv_path/bin/activate"
+
+# Install packages from requirements.txt
+pip install -r requirements.txt &> /dev/null
 
 if [ $? -ne 0 ]; then
     echo "ERROR: Cannot install the required packages."
@@ -46,11 +60,26 @@ else
     echo "INFO: Required packages are installed successfully."
 fi
 
+# Deactivate the virtual environment
+deactivate
+
+# Copy the vboxpower application and wrapper script with its dependencies
+cp vboxpower.py /opt/maas/vboxpower/vboxpower.py
+cp start_gunicorn.sh /opt/maas/vboxpower/start_gunicorn.sh
+
+# Setup systemd service file
 cp vboxpower.service /etc/systemd/system/vboxpower.service
 
-mkdir -p /opt/maas/vboxpower
-cp vboxpower.py /opt/maas/vboxpower/vboxpower.py
-
-echo "INFO: Starting vboxpower service."
-
+# Reload systemd, enable and start the vboxpower service
+systemctl daemon-reload
 systemctl enable --now vboxpower.service
+systemctl restart vboxpower.service
+
+if systemctl -q is-active vboxpower.service; then
+    echo "INFO: vboxpower service started successfully."
+else
+    echo "ERROR: Failed to start vboxpower service."
+    systemctl status vboxpower.service
+    exit 1
+fi
+
